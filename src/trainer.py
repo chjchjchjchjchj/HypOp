@@ -3,7 +3,8 @@ import timeit
 from itertools import chain
 import torch
 from src.timer import Timer
-from src.loss import loss_cal_and_update, maxcut_loss_func_helper, loss_maxcut_weighted, loss_sat_weighted, loss_maxind_weighted, loss_maxind_QUBO, loss_maxind_weighted2, loss_task_weighted, loss_maxcut_weighted_anealed, loss_task_weighted_vec, loss_mincut_weighted, loss_partitioning_weighted, loss_partitioning_nonbinary, loss_maxcut_weighted_coarse, loss_maxind_QUBO_coarse, loss_maxcut_weighted_multi
+# from src.loss import loss_cal_and_update, maxcut_loss_func_helper, loss_maxcut_weighted, loss_sat_weighted, loss_maxind_weighted, loss_maxind_QUBO, loss_maxind_weighted2, loss_task_weighted, loss_maxcut_weighted_anealed, loss_task_weighted_vec, loss_mincut_weighted, loss_partitioning_weighted, loss_partitioning_nonbinary, loss_maxcut_weighted_coarse, loss_maxind_QUBO_coarse, loss_maxcut_weighted_multi
+from src.loss import loss_cal_and_update, maxcut_loss_func_helper, loss_maxcut_weighted, loss_sat_weighted, loss_maxind_weighted, loss_maxind_QUBO, loss_maxind_weighted2, loss_task_weighted, loss_maxcut_weighted_anealed, loss_task_weighted_vec, loss_mincut_weighted, loss_partitioning_weighted, loss_partitioning_nonbinary, loss_maxcut_weighted_coarse, loss_maxind_QUBO_coarse, loss_maxcut_weighted_multi, loss_maxind_weighted_multi
 from src.utils import mapping_algo, mapping_distribution, gen_q_mis,gen_q_maxcut, mapping_distribution_QUBO, get_normalized_G_from_con, mapping_distribution_vec_task, mapping_distribution_vec, all_to_weights, all_to_weights_task
 import numpy as np
 import multiprocessing as mp
@@ -391,7 +392,7 @@ def centralized_train_for(params, f, total_C, n, info_input_total, weights, file
             loss = loss_sat_weighted(temp, C, dct, [1 for i in range(len(C))])
         elif params['mode'] == 'maxcut':
             if params["multi_gpu"]:
-                temp_reduce = [torch.zeros_like(temp).to(f'cuda:{device}') for _ in range(4)]
+                temp_reduce = [torch.zeros_like(temp).to(f'cuda:{device}') for _ in range(params['num_gpus'])]
                 torch.distributed.all_gather(temp_reduce, temp)
                 temp_reduce = torch.cat(temp_reduce, dim=0)
                 temp_reduce = temp_reduce.squeeze(1)
@@ -399,7 +400,15 @@ def centralized_train_for(params, f, total_C, n, info_input_total, weights, file
                                         params['hyper'],
                                         TORCH_DEVICE, outer_constraint, temp_reduce, start=start)
         elif params['mode'] == 'maxind':
-            loss = loss_maxind_weighted2(temp, C, dct, [1 for i in range(len(C))])
+            if params["multi_gpu"]:
+                temp_reduce = [torch.zeros_like(temp).to(f'cuda:{device}') for _ in range(params['num_gpus'])]
+                torch.distributed.all_gather(temp_reduce, temp)
+                temp_reduce = torch.cat(temp_reduce, dim=0)
+                temp_reduce = temp_reduce.squeeze(1)
+                loss = loss_maxind_weighted_multi(temp, C, dct, [1 for i in range(len(C))],
+                                        TORCH_DEVICE, outer_constraint, temp_reduce, start=start)
+            else:
+                loss = loss_maxind_weighted2(temp, C, dct, [1 for i in range(len(C))])
         et = time.time()
         if verbose:
             print("Compute forward loss for maxcut: ", et - st)

@@ -4,7 +4,8 @@ import json
 
 
 
-with open('configs/Partitioning_new.json') as f:
+# with open('configs/Partitioning_new.json') as f:
+with open('configs/maxind_stanford_p1.json') as f:
    params = json.load(f)
 exp_centralized(params)
 

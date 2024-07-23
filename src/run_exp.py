@@ -8,7 +8,9 @@ import h5py
 import numpy as np
 import json
 import timeit
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 def exp_centralized(params):
     logging.basicConfig(filename=params['logging_path'], filemode='w', level=logging.INFO)
@@ -152,7 +154,7 @@ def exp_centralized_for_multi(proc_id, devices, params):
     # print("start to initialize process")
 
     master_ip = "127.0.0.1"
-    master_port = "12345"
+    master_port = "29500"
     world_size = len(devices)  # Total number of processes
     rank = proc_id  # Rank of this process, set to 0 for master, 1 for worker
 
@@ -160,9 +162,7 @@ def exp_centralized_for_multi(proc_id, devices, params):
     torch.distributed.init_process_group(backend="nccl", init_method=f'tcp://{master_ip}:{master_port}', world_size=world_size, rank=rank)
     
 
-    # torch.distributed.init_process_group(backend="nccl", init_method='env://', world_size=len(devices), rank=proc_id)
     print("start to train")
-
 
     logging.basicConfig(filename=params['logging_path'], filemode='w', level=logging.INFO)
     log = logging.getLogger('main')
@@ -178,7 +178,7 @@ def exp_centralized_for_multi(proc_id, devices, params):
             if params['data'] == "uf":
                 constraints, header = read_uf(path)
             elif params['data'] == "stanford" or params['data'] == "random_reg":
-                constraints, header = read_stanford(path)
+                constraints, header = read_stanford(path) # header={'num_nodes': 2000, 'num_constraints': 19990}
             elif params['data'] == "hypergraph":
                 constraints, header = read_hypergraph(path)
             elif params['data'] == "arxiv":

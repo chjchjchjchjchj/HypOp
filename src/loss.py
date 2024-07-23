@@ -758,3 +758,75 @@ def loss_MNP_weighted(res, C, weights, hyper):
     #     penalty = torch.sum(torch.min((1 - x_c), x_c))
     #     loss2 += penalty_c * penalty
     return loss2
+
+# def loss_maxind_weighted_multi(
+#     probs,
+#     C,
+#     dct,
+#     weights_tensor,
+#     TORCH_DEVICE="cpu",
+#     outer_constraint=None,
+#     temp_reduce=None,
+#     start=0,
+# ):
+#     p = 4
+#     x = probs.squeeze()
+#     loss = -torch.sum(x)
+#     # loss = - (x.T@x)
+#     inner_temp_values = torch.zeros(len(outer_constraint) + len(C)).to(TORCH_DEVICE)
+#     out_point = len(C)
+#     total_C = C + outer_constraint if outer_constraint else C
+#     for idx, c in enumerate(total_C):
+#         indices = [dct[index] for index in c]
+#         indices = [index - start for index in indices]
+#         if idx < out_point:
+#             selected_x = x[indices]
+#             temp = p * weights_tensor[idx] * torch.prod(selected_x)
+#             inner_temp_values[idx] = temp
+#         else:
+#             res = [
+#                 x[indice] if 0 <= indice and indice < len(x) else torch.tensor(0.0).to(TORCH_DEVICE)
+#                 for indice in indices
+#             ]
+#             selected_x = torch.stack(res)
+#             temp = 0.5 * p * weights_tensor[0] * torch.prod(selected_x)
+#             inner_temp_values[idx] = temp
+
+#     loss += torch.sum(inner_temp_values)
+#     return loss
+
+def loss_maxind_weighted_multi(
+    probs,
+    C,
+    dct,
+    weights_tensor,
+    TORCH_DEVICE="cpu",
+    outer_constraint=None,
+    temp_reduce=None,
+    start=0,
+):
+    p = 4
+    x = probs.squeeze()
+    loss = -torch.sum(x)
+    inner_temp_values = torch.zeros(len(outer_constraint) + len(C)).to(TORCH_DEVICE)
+    out_point = len(C)
+    total_C = C + outer_constraint if outer_constraint else C
+    for idx, c in enumerate(total_C):
+        indices = [dct[index] for index in c]
+        indices = [index - start for index in indices]
+        if idx < out_point:
+            selected_x = x[indices]
+            temp = p * weights_tensor[idx] * torch.prod(selected_x)
+            inner_temp_values[idx] = temp
+        else:
+            res = [
+                x[indice] if 0 <= indice and indice < len(x) else temp_reduce[indice + start - 1]
+                for indice in indices
+            ]
+            selected_x = torch.stack(res)
+            temp = 0.5 * p * weights_tensor[0] * torch.prod(selected_x)
+            inner_temp_values[idx] = temp
+
+    loss += torch.sum(inner_temp_values)
+    return loss
+

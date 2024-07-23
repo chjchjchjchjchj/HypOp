@@ -583,6 +583,7 @@ def gen_q_mis(constraints, n_nodes, penalty=2 ,torch_dtype=None, torch_device=No
 
     # Update Q matrix for every edge in the graph
     # all off-diagonal terms get penalty
+    print(f"constraints={constraints}")
     for cons in constraints:
         Q_mat[cons[0]-1][cons[1]-1] = penalty
         Q_mat[cons[1] - 1][cons[0] - 1] = penalty

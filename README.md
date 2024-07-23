@@ -83,7 +83,7 @@ In `run_dist.py`, set dataset` variable to `stanford` for stanford dataset resul
 In `run_dist.py`, set `test_mode` variable to `dist`
 
 ```python
-python -m torch.distributed.launch run.py
+python -m torch.distributed.launch run_dist.py
 ```
 
 ##### Step2: Postprocessing
@@ -93,7 +93,7 @@ in configs, set "load best out" to true, set "epoch" to 0
 In `run_dist.py`, set `test_mode` variable to `infer`
 
 ```python
-python -m torch.distributed.launch run.py
+python -m torch.distributed.launch run_dist.py
 ```
 
 Note that the results generated in Step1 **is not** the final results, you have to run Step 2 for postprocessing. 
